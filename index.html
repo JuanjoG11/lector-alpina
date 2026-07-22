@@ -200,9 +200,9 @@ async function startCamera() {
   html5QrCode = new Html5Qrcode('reader');
 
   const config = {
-    fps: 10,
-    qrbox: { width: 280, height: 160 },
-    aspectRatio: 1.5,
+    fps: 15,
+    qrbox: { width: 300, height: 100 },   // ventana angosta → fuerza apuntar al EAN-13
+    aspectRatio: 1.7,
     formatsToSupport: [
       Html5QrcodeSupportedFormats.EAN_13,
       Html5QrcodeSupportedFormats.EAN_8,
@@ -323,24 +323,27 @@ async function processScan(code) {
 
 // ── SUPABASE ──────────────────────────────────────────────
 async function buscarPedido(codigo) {
-  // codigo_barras es el código del producto (ej: 7702001044450)
-  // nro_factura es el número de factura (ej: 8100249471) — viene de col "Cliente" del Excel
-  // cliente es el nombre (ej: SUPERMISCELANEA) — viene de col "Negocio" del Excel
+  // Buscar en todos los campos posibles
+  const intentos = [
+    `pedidos?codigo_barras=eq.${enc(codigo)}&select=*&limit=1`,
+    `pedidos?nro_factura=eq.${enc(codigo)}&select=*&limit=1`,
+    `pedidos?cliente=eq.${enc(codigo)}&select=*&limit=1`,
+    `pedidos?negocio=eq.${enc(codigo)}&select=*&limit=1`,
+    `pedidos?ord_compra=eq.${enc(codigo)}&select=*&limit=1`,
+    `pedidos?planilla=eq.${enc(codigo)}&select=*&limit=1`,
+  ];
 
-  let rows = await supaGet(
-    `pedidos?codigo_barras=eq.${enc(codigo)}&select=*&limit=1`
-  );
-  if (!rows || !rows.length) {
-    rows = await supaGet(
-      `pedidos?nro_factura=eq.${enc(codigo)}&select=*&limit=1`
-    );
+  let fila = null;
+  for (const q of intentos) {
+    const rows = await supaGet(q);
+    if (rows && rows.length > 0) { fila = rows[0]; break; }
   }
-  if (!rows || !rows.length) return null;
+  if (!fila) return null;
 
-  // Traer TODOS los productos de esa factura
-  const nro  = rows[0].nro_factura;
+  // Traer todos los productos del mismo pedido agrupando por nro_factura
+  const nro  = fila.nro_factura;
   const todo = await supaGet(`pedidos?nro_factura=eq.${enc(nro)}&select=*`);
-  return buildPedido(todo.length ? todo : rows);
+  return buildPedido(todo.length ? todo : [fila]);
 }
 
 function buildPedido(rows) {
