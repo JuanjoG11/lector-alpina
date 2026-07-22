@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>Riel Scanner</title>
-  <script src="https://unpkg.com/@ericblade/quagga2@1.4.2/dist/quagga.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     :root{
@@ -26,9 +26,18 @@
     /* CAMARA */
     #reader{width:100%;max-width:500px;border-radius:var(--radius);
             overflow:hidden;margin-bottom:14px;border:2px solid var(--surface2);
-            background:#000;min-height:220px;transition:border-color .3s}
-    #reader video{width:100%!important;height:auto!important;display:block}
-    #reader canvas{display:none}
+            background:#000;transition:border-color .3s}
+    #reader video{width:100%!important;object-fit:cover}
+    /* ocultar UI innecesaria de html5-qrcode */
+    #reader__scan_region img{display:none!important}
+    #reader__dashboard{padding:6px 10px!important;background:var(--surface)!important}
+    #reader__dashboard_section_swaplink{color:var(--primary)!important;font-size:12px!important}
+    #reader__status_span{color:var(--muted)!important;font-size:12px!important}
+    #reader__camera_selection{background:var(--surface2)!important;color:var(--text)!important;
+      border:1px solid #333!important;border-radius:8px!important;padding:5px 8px!important;
+      font-size:12px!important;width:100%!important}
+    #reader__filescan_input{display:none!important}
+    #html5-qrcode-button-camera-stop,#html5-qrcode-button-camera-start{display:none!important}
 
     .cam-btns{width:100%;max-width:500px;display:flex;gap:10px;margin-bottom:16px}
     .btn-cam{flex:1;padding:14px;border:none;border-radius:12px;
@@ -178,87 +187,68 @@ const SUPA_URL = 'https://aylfgwyoxvplfegshewv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5bGZnd3lveHZwbGZlZ3NoZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NTQ0MzYsImV4cCI6MjEwMDMzMDQzNn0.MMjgt35jrLB4tdTGIFqTvbzqniyQ1C4EGghAiokipfA';
 const SCAN_KEY = 'riel_escaneos_v3';
 
-// ── CÁMARA con Quagga2 ───────────────────────────────────
+// ── CÁMARA con html5-qrcode ──────────────────────────────
+let scanner  = null;
 let scanning = false;
 let lastCode = '';
 let lastTs   = 0;
-const DEBOUNCE = 3000;
+const DEBOUNCE = 2500;
 
-function startCamera() {
+async function startCamera() {
   if (scanning) return;
   document.getElementById('btn-start').disabled = true;
   document.getElementById('btn-stop').disabled  = false;
   document.getElementById('reader').innerHTML   = '';
 
-  Quagga.init({
-    inputStream: {
-      name: 'Live',
-      type: 'LiveStream',
-      target: document.getElementById('reader'),
-      constraints: {
-        facingMode: 'environment',
-        width:  { ideal: 1280 },
-        height: { ideal: 720 },
+  scanner = new Html5Qrcode('reader');
+
+  try {
+    await scanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 15,
+        qrbox: { width: 260, height: 90 },
+        aspectRatio: 1.5,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.CODABAR,
+        ],
       },
-    },
-    decoder: {
-      readers: [
-        'code_128_reader',
-        'ean_reader',
-        'ean_8_reader',
-        'code_39_reader',
-        'upc_reader',
-        'upc_e_reader',
-        'i2of5_reader',
-      ],
-      multiple: false,
-    },
-    locate: true,
-    numOfWorkers: 2,
-    frequency: 10,
-  }, (err) => {
-    if (err) {
-      resetCamBtns();
-      document.getElementById('reader').innerHTML =
-        '<p style="color:var(--danger);text-align:center;padding:30px 20px">⛔ No se pudo abrir la cámara.<br>Verificá los permisos.</p>';
-      showToast('Error al abrir cámara', 'error');
-      return;
-    }
-    Quagga.start();
+      (code) => {
+        const now = Date.now();
+        if (code === lastCode && (now - lastTs) < DEBOUNCE) return;
+        lastCode = code;
+        lastTs   = now;
+        // flash borde verde
+        const r = document.getElementById('reader');
+        r.style.borderColor = 'var(--success)';
+        setTimeout(() => r.style.borderColor = 'var(--surface2)', 600);
+        vibrate([60]);
+        processScan(code);
+      },
+      () => {} // ignorar errores de frame
+    );
     scanning = true;
-  });
-
-  Quagga.onDetected((result) => {
-    const code = result.codeResult.code;
-    if (!code) return;
-
-    // Filtrar: solo aceptar códigos de 8 o más dígitos/caracteres
-    if (code.length < 8) return;
-
-    // Filtrar por confianza — solo lecturas con alta certeza
-    const err = result.codeResult.decodedCodes
-      .filter(c => c.error !== undefined)
-      .reduce((acc, c) => acc + c.error, 0);
-    if (err > 0.25) return;
-
-    const now = Date.now();
-    if (code === lastCode && (now - lastTs) < DEBOUNCE) return;
-    lastCode = code;
-    lastTs   = now;
-
-    // Flash visual
-    document.getElementById('reader').style.borderColor = 'var(--success)';
-    setTimeout(() => document.getElementById('reader').style.borderColor = 'var(--surface2)', 500);
-
-    processScan(code);
-  });
+  } catch(e) {
+    resetCamBtns();
+    showToast('No se pudo abrir la cámara', 'error');
+    document.getElementById('reader').innerHTML =
+      '<p style="color:var(--danger);text-align:center;padding:24px 16px;font-size:14px">⛔ Sin acceso a la cámara.<br>Habilitá el permiso en el navegador.</p>';
+  }
 }
 
-function stopCamera() {
-  if (scanning) {
-    Quagga.stop();
-    scanning = false;
+async function stopCamera() {
+  if (scanner && scanning) {
+    try { await scanner.stop(); } catch {}
+    scanner = null;
   }
+  scanning = false;
   resetCamBtns();
   document.getElementById('reader').innerHTML = '';
 }
