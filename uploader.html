@@ -3,325 +3,336 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cargar Pedidos Excel</title>
+  <title>Cargar Pedidos</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a1a;color:#f0f0ff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px}
-    h1{font-size:26px;font-weight:900;margin-bottom:6px}
-    .sub{color:#8888aa;margin-bottom:32px;font-size:15px}
-    .card{background:#12122a;border:2px solid #1e1e3f;border-radius:16px;padding:28px;width:100%;max-width:600px;margin-bottom:20px}
-    .card h2{font-size:16px;font-weight:700;margin-bottom:16px;color:#8888aa;text-transform:uppercase;letter-spacing:1px}
-    .drop-zone{border:2px dashed #0057ff;border-radius:12px;padding:48px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
-    .drop-zone:hover,.drop-zone.drag{background:rgba(0,87,255,.08);border-color:#4d8aff}
-    .drop-zone .icon{font-size:48px;margin-bottom:12px}
-    .drop-zone p{color:#8888aa;font-size:15px}
-    .drop-zone strong{display:block;color:#f0f0ff;font-size:17px;margin-bottom:6px}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+         background:#0a0a1a;color:#f0f0ff;min-height:100vh;
+         display:flex;flex-direction:column;align-items:center;padding:28px 16px}
+    h1{font-size:24px;font-weight:900;margin-bottom:4px}
+    .sub{color:#8888aa;margin-bottom:28px;font-size:14px}
+    .card{background:#12122a;border:2px solid #1e1e3f;border-radius:16px;
+          padding:24px;width:100%;max-width:580px;margin-bottom:18px}
+    .card h2{font-size:13px;font-weight:700;text-transform:uppercase;
+             letter-spacing:1px;color:#8888aa;margin-bottom:16px}
+    .drop{border:2px dashed #0057ff;border-radius:12px;padding:40px 16px;
+          text-align:center;cursor:pointer;transition:.2s;margin-bottom:14px}
+    .drop:hover,.drop.drag{background:rgba(0,87,255,.07)}
+    .drop .ico{font-size:44px;margin-bottom:10px}
+    .drop strong{display:block;font-size:16px;margin-bottom:4px}
+    .drop p{color:#8888aa;font-size:13px}
     input[type=file]{display:none}
-    .btn{width:100%;background:#0057ff;color:#fff;border:none;border-radius:12px;padding:16px;font-size:17px;font-weight:800;cursor:pointer;transition:background .15s;letter-spacing:.5px}
+    .btn{width:100%;background:#0057ff;color:#fff;border:none;border-radius:12px;
+         padding:15px;font-size:16px;font-weight:800;cursor:pointer;transition:.15s}
     .btn:disabled{background:#333355;cursor:not-allowed}
     .btn:hover:not(:disabled){background:#003dc2}
-    .btn-danger{background:#ff1744}
-    .btn-danger:hover:not(:disabled){background:#c4001a}
-    .preview{overflow-x:auto;margin-top:16px}
-    table{border-collapse:collapse;width:100%;font-size:12px}
-    th{background:#1e1e3f;padding:8px 10px;text-align:left;color:#8888aa;white-space:nowrap}
-    td{padding:7px 10px;border-bottom:1px solid #1e1e3f;white-space:nowrap}
-    .progress-wrap{background:#1e1e3f;border-radius:8px;height:12px;margin:12px 0;overflow:hidden}
-    .progress-bar{height:100%;background:#0057ff;border-radius:8px;transition:width .3s;width:0}
-    .log{background:#000814;border-radius:10px;padding:14px;font-family:monospace;font-size:13px;max-height:220px;overflow-y:auto;margin-top:12px;line-height:1.7}
-    .log .ok{color:#00c853}
-    .log .err{color:#ff1744}
-    .log .info{color:#8888aa}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-    .stat{background:#1e1e3f;border-radius:10px;padding:16px;text-align:center}
-    .stat-n{font-size:30px;font-weight:900;color:#0057ff}
-    .stat-l{font-size:12px;color:#8888aa;margin-top:2px}
-    .map-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .map-row{display:flex;align-items:center;gap:8px;font-size:14px}
-    .map-row label{color:#8888aa;width:130px;flex-shrink:0;font-size:12px}
-    .map-row select{flex:1;background:#1e1e3f;border:1px solid #333355;border-radius:8px;color:#f0f0ff;padding:7px 10px;font-size:13px}
-    .badge{display:inline-block;background:#00c853;color:#000;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;margin-left:8px}
-    .badge.warn{background:#ff9100}
+    .btn-red{background:#ff1744}
+    .btn-red:hover:not(:disabled){background:#c4001a}
+    .warn-box{background:rgba(255,145,0,.1);border:1px solid #ff9100;border-radius:10px;
+              padding:14px 16px;font-size:13px;color:#ff9100;margin-bottom:14px;display:none}
+    .map-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+    .map-row{display:flex;align-items:center;gap:6px}
+    .map-row label{color:#8888aa;font-size:11px;width:140px;flex-shrink:0}
+    .map-row select{flex:1;background:#1e1e3f;border:1px solid #333;border-radius:8px;
+                    color:#f0f0ff;padding:6px 8px;font-size:12px}
+    .preview{overflow-x:auto;margin-bottom:12px}
+    table{border-collapse:collapse;width:100%;font-size:11px}
+    th{background:#1e1e3f;padding:7px 9px;text-align:left;color:#8888aa;white-space:nowrap}
+    td{padding:6px 9px;border-bottom:1px solid #1e1e3f;white-space:nowrap}
+    .prog-wrap{background:#1e1e3f;border-radius:8px;height:10px;margin:10px 0;overflow:hidden}
+    .prog-bar{height:100%;background:#0057ff;border-radius:8px;transition:width .3s;width:0}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+    .stat{background:#1e1e3f;border-radius:10px;padding:14px;text-align:center}
+    .stat-n{font-size:26px;font-weight:900;color:#0057ff;display:block}
+    .stat-l{font-size:11px;color:#8888aa}
+    .log{background:#000814;border-radius:10px;padding:12px;font-family:monospace;
+         font-size:12px;max-height:200px;overflow-y:auto;margin-top:10px;line-height:1.7}
+    .ok{color:#00c853}.err{color:#ff1744}.info{color:#8888aa}.warn{color:#ff9100}
+    .archivos-list{display:flex;flex-direction:column;gap:8px}
+    .arch-item{background:#1e1e3f;border-radius:10px;padding:12px 14px;
+               display:flex;justify-content:space-between;align-items:center;font-size:13px}
+    .arch-name{font-weight:700}
+    .arch-meta{color:#8888aa;font-size:12px}
+    .btn-del{background:#ff1744;color:#fff;border:none;border-radius:8px;
+             padding:6px 12px;font-size:12px;cursor:pointer;font-weight:700}
+    .back{color:#8888aa;font-size:13px;text-decoration:none;margin-bottom:20px;display:inline-block}
   </style>
 </head>
 <body>
+  <a href="/" class="back">← Volver al scanner</a>
   <h1>📤 Cargar Pedidos</h1>
-  <p class="sub">Subí tu Excel con las ~2000 filas a Supabase</p>
+  <p class="sub">El Excel anterior del mismo nombre se reemplaza automáticamente</p>
 
-  <!-- PASO 1: Subir archivo -->
-  <div class="card">
-    <h2>1 · Seleccionar Excel</h2>
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-      <div class="icon">📊</div>
-      <strong>Arrastrá tu archivo .xlsx aquí</strong>
-      <p>o tocá para seleccionar</p>
+  <!-- Archivos cargados -->
+  <div class="card" id="card-archivos">
+    <h2>Archivos en Supabase</h2>
+    <div class="archivos-list" id="archivos-list">
+      <p style="color:#8888aa;font-size:13px">Cargando...</p>
     </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls,.csv"/>
   </div>
 
-  <!-- PASO 2: Mapeo de columnas (aparece tras leer el archivo) -->
+  <!-- Subir archivo -->
+  <div class="card">
+    <h2>Subir nuevo Excel</h2>
+    <div class="drop" id="drop" onclick="document.getElementById('fi').click()">
+      <div class="ico">📊</div>
+      <strong>Arrastrá tu .xlsx aquí</strong>
+      <p>o tocá para seleccionar</p>
+    </div>
+    <input type="file" id="fi" accept=".xlsx,.xls,.csv"/>
+    <div class="warn-box" id="warn-box"></div>
+  </div>
+
+  <!-- Mapeo -->
   <div class="card" id="card-map" style="display:none">
-    <h2>2 · Mapear columnas <span class="badge" id="badge-filas"></span></h2>
-    <p style="color:#8888aa;font-size:13px;margin-bottom:16px">
-      Asociá cada campo con la columna de tu Excel.
-    </p>
+    <h2>Mapear columnas <span id="badge-filas" style="background:#0057ff;color:#fff;padding:2px 10px;border-radius:20px;font-size:11px;margin-left:6px"></span></h2>
     <div class="map-grid" id="map-grid"></div>
     <div class="preview" id="preview"></div>
   </div>
 
-  <!-- PASO 3: Subir -->
+  <!-- Upload -->
   <div class="card" id="card-upload" style="display:none">
-    <h2>3 · Subir a Supabase</h2>
-    <div style="display:flex;gap:10px;margin-bottom:12px">
-      <button class="btn" id="btn-upload" onclick="uploadData()">⬆️ Subir pedidos</button>
-      <button class="btn btn-danger" style="width:auto;padding:16px 20px" onclick="borrarTodo()" title="Borrar todos los pedidos de Supabase">🗑️</button>
+    <h2>Subir a Supabase</h2>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <button class="btn" id="btn-up" onclick="uploadData()">⬆️ Subir pedidos</button>
     </div>
-    <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="prog-wrap"><div class="prog-bar" id="prog"></div></div>
     <div class="stats">
-      <div class="stat"><span class="stat-n" id="s-total">0</span><div class="stat-l">Total filas</div></div>
-      <div class="stat"><span class="stat-n" id="s-ok">0</span><div class="stat-l">Subidas</div></div>
-      <div class="stat"><span class="stat-n" id="s-err">0</span><div class="stat-l">Errores</div></div>
+      <div class="stat"><span class="stat-n" id="s-t">0</span><span class="stat-l">Total</span></div>
+      <div class="stat"><span class="stat-n" id="s-ok">0</span><span class="stat-l">Subidas</span></div>
+      <div class="stat"><span class="stat-n" id="s-e">0</span><span class="stat-l">Errores</span></div>
     </div>
     <div class="log" id="log"></div>
   </div>
 
-  <script>
-  // ── CONFIG SUPABASE ──────────────────────────────────────
-  const SUPA_URL  = 'https://aylfgwyoxvplfegshewv.supabase.co';
-  const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5bGZnd3lveHZwbGZlZ3NoZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NTQ0MzYsImV4cCI6MjEwMDMzMDQzNn0.MMjgt35jrLB4tdTGIFqTvbzqniyQ1C4EGghAiokipfA';
-  const TABLE     = 'pedidos';
-  const BATCH     = 200; // filas por lote
+<script>
+const SUPA = 'https://aylfgwyoxvplfegshewv.supabase.co';
+const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5bGZnd3lveHZwbGZlZ3NoZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NTQ0MzYsImV4cCI6MjEwMDMzMDQzNn0.MMjgt35jrLB4tdTGIFqTvbzqniyQ1C4EGghAiokipfA';
+const BATCH = 200;
 
-  // Campos esperados en Supabase → etiqueta legible
-  const FIELDS = {
-    factura:       'Factura (ej: TD-N-1)',
-    nro_factura:   '⭐ Nº Factura (col. "Cliente" en Excel)',
-    cliente:       '⭐ Nombre cliente (col. "Negocio" en Excel)',
-    ruta:          'Ruta',
-    ubicacion:     'Ubicación',
-    zona:          'Zona',
-    negocio:       'Negocio (duplicado)',
-    codigo_barras: '⭐ Código de barras (col. "codigo")',
-    cod_producto:  'Código producto (col. "Código")',
-    producto:      '⭐ Producto',
-    cantidad:      '⭐ Cantidad',
-    planilla:      'Planilla',
-    ord_compra:    'Ord. Compra',
-    ord_planilla:  'Ord. Planilla',
-    ruta_cliente:  'Ruta Cliente',
+const FIELDS = {
+  factura:       'Factura',
+  nro_factura:   '⭐ Nº Factura (col. "Cliente")',
+  cliente:       '⭐ Nombre cliente (col. "Negocio")',
+  ruta:          'Ruta',
+  ubicacion:     'Ubicación',
+  zona:          'Zona',
+  negocio:       'Negocio',
+  codigo_barras: '⭐ Código de barras (col. "barras")',
+  cod_producto:  'Código producto',
+  producto:      '⭐ Producto',
+  cantidad:      '⭐ Cantidad',
+  planilla:      'Planilla',
+  ord_compra:    'Ord. Compra',
+  ord_planilla:  'Ord. Planilla',
+  ruta_cliente:  'Ruta Cliente',
+};
+
+const AUTO_MAP = {
+  factura:       ['factura'],
+  nro_factura:   ['cliente'],
+  cliente:       ['negocio'],
+  ruta:          ['ruta'],
+  ubicacion:     ['ubicacion','ubicación'],
+  zona:          ['zona'],
+  negocio:       ['negocio'],
+  codigo_barras: ['barras','codigo','código','ean','barcode'],
+  cod_producto:  ['código','codigo'],
+  producto:      ['producto'],
+  cantidad:      ['cantidad','qty','cant'],
+  planilla:      ['planilla'],
+  ord_compra:    ['ord.compra','ord compra','orden compra'],
+  ord_planilla:  ['ord. planilla','ord planilla'],
+  ruta_cliente:  ['ruta cliente','rutacliente'],
+};
+
+let excelRows = [], excelHeaders = [], mapping = {}, fileName = '';
+
+// ── DRAG & DROP ─────────────────────────────────────────
+const drop = document.getElementById('drop');
+const fi   = document.getElementById('fi');
+drop.addEventListener('dragover', e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');handleFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>handleFile(e.target.files[0]));
+
+function handleFile(file) {
+  if (!file) return;
+  fileName = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb   = XLSX.read(e.target.result,{type:'array'});
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws,{defval:''});
+    if (!data.length){alert('Archivo vacío');return}
+    excelRows   = data;
+    excelHeaders = Object.keys(data[0]);
+    drop.innerHTML = `<div class="ico">✅</div><strong>${file.name}</strong><p>${data.length} filas leídas</p>`;
+    // Advertir si ya existe ese archivo
+    checkArchivoExistente(fileName);
+    buildMapping();
+    document.getElementById('card-map').style.display    = 'block';
+    document.getElementById('card-upload').style.display = 'block';
+    document.getElementById('badge-filas').textContent   = data.length + ' filas';
+    document.getElementById('s-t').textContent           = data.length;
   };
+  reader.readAsArrayBuffer(file);
+}
 
-  let excelRows = [];
-  let excelHeaders = [];
-  let mapping = {};
+async function checkArchivoExistente(nombre) {
+  const r = await supaFetch(`pedidos?archivo=eq.${enc(nombre)}&select=id&limit=1`,'GET');
+  const wb = document.getElementById('warn-box');
+  if (r && r.length) {
+    wb.style.display = 'block';
+    wb.textContent = `⚠️ Ya existe "${nombre}" en Supabase. Al subir, los datos anteriores se reemplazarán automáticamente.`;
+  } else {
+    wb.style.display = 'none';
+  }
+}
 
-  // ── DRAG & DROP ──────────────────────────────────────────
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault(); dropZone.classList.remove('drag');
-    handleFile(e.dataTransfer.files[0]);
+// ── MAPEO ───────────────────────────────────────────────
+function normalize(s){return String(s).toLowerCase().replace(/[^a-z0-9]/g,'')}
+function autoDetect(field){
+  for(const h of excelHeaders){
+    const hn=normalize(h);
+    for(const c of (AUTO_MAP[field]||[])){
+      if(hn.includes(normalize(c))) return h;
+    }
+  }
+  return '';
+}
+function buildMapping(){
+  const grid=document.getElementById('map-grid');
+  grid.innerHTML='';
+  mapping={};
+  const opts=['', ...excelHeaders].map(h=>`<option value="${h}">${h||'-- ignorar --'}</option>`).join('');
+  Object.entries(FIELDS).forEach(([field,label])=>{
+    const det=autoDetect(field);
+    mapping[field]=det;
+    const row=document.createElement('div');
+    row.className='map-row';
+    row.innerHTML=`<label>${label}</label>
+      <select id="mp-${field}" onchange="mapping['${field}']=this.value">${opts}</select>`;
+    grid.appendChild(row);
+    setTimeout(()=>{const s=document.getElementById(`mp-${field}`);if(s)s.value=det},0);
   });
-  fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+  // preview
+  const cols=excelHeaders.slice(0,8);
+  const rows=excelRows.slice(0,3);
+  document.getElementById('preview').innerHTML=`
+    <p style="color:#8888aa;font-size:11px;margin:10px 0 6px">Vista previa:</p>
+    <table><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>
+    ${rows.map(r=>`<tr>${cols.map(c=>`<td>${r[c]??''}</td>`).join('')}</tr>`).join('')}
+    </table>`;
+}
 
-  function handleFile(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      if (!data.length) { alert('El archivo está vacío'); return; }
-      excelRows = data;
-      excelHeaders = Object.keys(data[0]);
-      dropZone.innerHTML = `<div class="icon">✅</div><strong>${file.name}</strong><p>${data.length} filas leídas</p>`;
-      buildMapping();
-      document.getElementById('card-map').style.display = 'block';
-      document.getElementById('card-upload').style.display = 'block';
-      document.getElementById('badge-filas').textContent = data.length + ' filas';
-      updateStats();
-    };
-    reader.readAsArrayBuffer(file);
+// ── UPLOAD ──────────────────────────────────────────────
+let okCnt=0, errCnt=0;
+async function uploadData(){
+  const btn=document.getElementById('btn-up');
+  btn.disabled=true; okCnt=0; errCnt=0;
+  document.getElementById('log').innerHTML='';
+
+  // 1. Borrar filas anteriores del mismo archivo
+  log('info',`Borrando datos anteriores de "${fileName}"...`);
+  await supaFetch(`pedidos?archivo=eq.${enc(fileName)}`,'DELETE');
+  log('ok','Datos anteriores eliminados ✓');
+
+  // 2. Construir filas
+  const rows = excelRows.map(r=>buildRow(r));
+  log('info',`Subiendo ${rows.length} filas en lotes de ${BATCH}...`);
+
+  for(let i=0;i<rows.length;i+=BATCH){
+    const batch=rows.slice(i,i+BATCH);
+    const lote=Math.floor(i/BATCH)+1;
+    const err=await supaInsert(batch);
+    if(err){ errCnt+=batch.length; log('err',`Lote ${lote} ERROR: ${err.message||JSON.stringify(err)}`); }
+    else   { okCnt+=batch.length;  log('ok', `Lote ${lote}: ${batch.length} filas ✓`); }
+    const pct=Math.min(Math.round(((i+BATCH)/rows.length)*100),100);
+    document.getElementById('prog').style.width=pct+'%';
+    document.getElementById('s-ok').textContent=okCnt;
+    document.getElementById('s-e').textContent=errCnt;
+    document.getElementById('log').scrollTop=9999;
+    await sleep(60);
   }
+  log(errCnt===0?'ok':'err',`✅ Listo. ${okCnt} filas subidas, ${errCnt} errores.`);
+  btn.disabled=false;
+  loadArchivos();
+}
 
-  // ── MAPEO AUTOMÁTICO ─────────────────────────────────────
-  const AUTO_MAP = {
-    factura:       ['factura'],
-    nro_factura:   ['cliente'],           // en tu Excel la col "Cliente" tiene el nro de factura
-    cliente:       ['negocio'],           // en tu Excel la col "Negocio" tiene el nombre real
-    ruta:          ['ruta'],
-    ubicacion:     ['ubicacion','ubicación'],
-    zona:          ['zona'],
-    negocio:       ['negocio'],
-    codigo_barras: ['codigo','código','barras','ean','barcode'],
-    cod_producto:  ['código','codigo'],   // col "Código" (con tilde)
-    producto:      ['producto'],
-    cantidad:      ['cantidad','qty','cant'],
-    planilla:      ['planilla'],
-    ord_compra:    ['ord.compra','ord compra','orden compra'],
-    ord_planilla:  ['ord. planilla','ord planilla'],
-    ruta_cliente:  ['ruta cliente','rutacliente'],
-  };
-
-  function normalize(s) {
-    return String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
-  }
-
-  function autoDetect(field) {
-    const candidates = AUTO_MAP[field] || [];
-    for (const h of excelHeaders) {
-      const hn = normalize(h);
-      for (const c of candidates) {
-        if (hn.includes(normalize(c))) return h;
+function buildRow(r){
+  const row={archivo: fileName};
+  Object.keys(FIELDS).forEach(field=>{
+    const col=mapping[field];
+    if(!col) return;
+    let val=r[col]??'';
+    if(field==='cantidad'){
+      val=parseInt(val)||0;
+    } else {
+      val=String(val).trim();
+      // Convertir notación científica: 7.702E+12 → 7702001044450
+      if(/^[\d.]+[eE][+\-]?\d+$/.test(val.replace(',','.'))){
+        val=String(Math.round(Number(val.replace(',','.'))));
       }
+      val=val.replace(/,/g,'');
     }
-    return '';
+    row[field]=val;
+  });
+  return row;
+}
+
+// ── ARCHIVOS ────────────────────────────────────────────
+async function loadArchivos(){
+  const r=await supaFetch('pedidos?select=archivo&limit=10000','GET');
+  if(!r){document.getElementById('archivos-list').innerHTML='<p style="color:#ff1744">Error cargando</p>';return}
+  const conteo={};
+  r.forEach(({archivo})=>{ if(archivo) conteo[archivo]=(conteo[archivo]||0)+1; });
+  const list=document.getElementById('archivos-list');
+  if(!Object.keys(conteo).length){
+    list.innerHTML='<p style="color:#8888aa;font-size:13px">No hay archivos cargados aún.</p>';return;
   }
+  list.innerHTML=Object.entries(conteo).map(([name,cnt])=>`
+    <div class="arch-item">
+      <div><div class="arch-name">📄 ${name}</div>
+           <div class="arch-meta">${cnt} filas</div></div>
+      <button class="btn-del" onclick="borrarArchivo('${name.replace(/'/g,"\\'")}')">🗑️ Borrar</button>
+    </div>`).join('');
+}
 
-  function buildMapping() {
-    const grid = document.getElementById('map-grid');
-    grid.innerHTML = '';
-    mapping = {};
-    const opts = ['', ...excelHeaders].map(h => `<option value="${h}">${h || '-- ignorar --'}</option>`).join('');
+async function borrarArchivo(nombre){
+  if(!confirm(`¿Borrar todos los pedidos de "${nombre}"?`)) return;
+  await supaFetch(`pedidos?archivo=eq.${enc(nombre)}`,'DELETE');
+  log('ok',`"${nombre}" borrado ✓`);
+  loadArchivos();
+}
 
-    Object.entries(FIELDS).forEach(([field, label]) => {
-      const detected = autoDetect(field);
-      mapping[field] = detected;
-      const row = document.createElement('div');
-      row.className = 'map-row';
-      row.innerHTML = `<label>${label}</label>
-        <select id="map-${field}" onchange="mapping['${field}']=this.value">
-          ${opts}
-        </select>`;
-      grid.appendChild(row);
-      setTimeout(() => {
-        const sel = document.getElementById(`map-${field}`);
-        if (sel) sel.value = detected;
-      }, 0);
-    });
+// ── UTILS ───────────────────────────────────────────────
+async function supaFetch(path,method='GET',body=null){
+  const opts={method,headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(`${SUPA}/rest/v1/${path}`,opts);
+  if(method==='GET') return r.json();
+  return r.ok?null:r.json().catch(()=>({message:r.statusText}));
+}
+async function supaInsert(rows){
+  const r=await fetch(`${SUPA}/rest/v1/pedidos`,{
+    method:'POST',
+    headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify(rows)
+  });
+  return r.ok?null:await r.json().catch(()=>({message:r.statusText}));
+}
+function enc(s){return encodeURIComponent(s)}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function log(type,msg){
+  const el=document.getElementById('log');
+  el.innerHTML+=`<div class="${type}">[${new Date().toLocaleTimeString('es-AR')}] ${msg}</div>`;
+  el.scrollTop=9999;
+}
 
-    // Preview primeras 3 filas
-    buildPreview();
-  }
-
-  function buildPreview() {
-    const preview = document.getElementById('preview');
-    const rows = excelRows.slice(0, 3);
-    const cols = excelHeaders.slice(0, 8);
-    preview.innerHTML = `<p style="color:#8888aa;font-size:12px;margin:12px 0 6px">Vista previa (3 filas):</p>
-      <table><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>
-      ${rows.map(r=>`<tr>${cols.map(c=>`<td>${r[c]??''}</td>`).join('')}</tr>`).join('')}
-      </table>`;
-  }
-
-  function updateStats() {
-    document.getElementById('s-total').textContent = excelRows.length;
-  }
-
-  // ── UPLOAD ───────────────────────────────────────────────
-  let okCount = 0, errCount = 0;
-
-  async function uploadData() {
-    const btn = document.getElementById('btn-upload');
-    btn.disabled = true;
-    okCount = 0; errCount = 0;
-    const logEl = document.getElementById('log');
-    logEl.innerHTML = '';
-
-    const rows = excelRows.map(r => buildRow(r));
-    const total = rows.length;
-    log('info', `Iniciando subida de ${total} filas en lotes de ${BATCH}...`);
-
-    for (let i = 0; i < rows.length; i += BATCH) {
-      const batch = rows.slice(i, i + BATCH);
-      const lote = Math.floor(i/BATCH) + 1;
-      try {
-        const res = await supaInsert(batch);
-        if (res.error) throw res.error;
-        okCount += batch.length;
-        log('ok', `Lote ${lote}: ${batch.length} filas ✓`);
-      } catch(e) {
-        errCount += batch.length;
-        log('err', `Lote ${lote} ERROR: ${e.message || JSON.stringify(e)}`);
-      }
-      const pct = Math.round(((i + BATCH) / total) * 100);
-      document.getElementById('progress-bar').style.width = Math.min(pct,100) + '%';
-      document.getElementById('s-ok').textContent  = okCount;
-      document.getElementById('s-err').textContent = errCount;
-      logEl.scrollTop = logEl.scrollHeight;
-      await sleep(80);
-    }
-
-    log(errCount === 0 ? 'ok' : 'err',
-        `✅ Listo. ${okCount} filas subidas, ${errCount} errores.`);
-    btn.disabled = false;
-  }
-
-  function buildRow(r) {
-    const row = {};
-    Object.keys(FIELDS).forEach(field => {
-      const col = mapping[field];
-      if (!col) return;
-      let val = r[col] ?? '';
-      if (field === 'cantidad') {
-        val = parseInt(val) || 0;
-      } else {
-        // Convertir notación científica a número completo (ej: 7.702E+12 → 7702001044450)
-        val = String(val).trim();
-        if (/^[\d.,]+e[+-]?\d+$/i.test(val)) {
-          val = String(Math.round(parseFloat(val.replace(',','.'))));
-        }
-        // Quitar comas de miles si las hay (7,702,001 → 7702001)
-        val = val.replace(/,/g, '');
-      }
-      row[field] = val;
-    });
-    return row;
-  }
-
-  async function supaInsert(rows) {
-    const res = await fetch(`${SUPA_URL}/rest/v1/${TABLE}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'apikey':        SUPA_KEY,
-        'Authorization': `Bearer ${SUPA_KEY}`,
-        'Prefer':        'return=minimal',
-      },
-      body: JSON.stringify(rows),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      return { error: err };
-    }
-    return { error: null };
-  }
-
-  async function borrarTodo() {
-    if (!confirm('⚠️ ¿Borrar TODOS los pedidos de Supabase? Esto no se puede deshacer.')) return;
-    log('info', 'Borrando todos los pedidos...');
-    const res = await fetch(`${SUPA_URL}/rest/v1/${TABLE}?id=gte.0`, {
-      method: 'DELETE',
-      headers: {
-        'apikey':        SUPA_KEY,
-        'Authorization': `Bearer ${SUPA_KEY}`,
-      },
-    });
-    if (res.ok) log('ok', 'Todos los pedidos borrados ✓');
-    else log('err', 'Error al borrar: ' + res.statusText);
-  }
-
-  function log(type, msg) {
-    const el = document.getElementById('log');
-    el.innerHTML += `<div class="${type}">[${new Date().toLocaleTimeString('es-AR')}] ${msg}</div>`;
-    el.scrollTop = el.scrollHeight;
-  }
-
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-  </script>
+// Init
+loadArchivos();
+</script>
 </body>
 </html>

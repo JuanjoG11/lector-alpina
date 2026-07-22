@@ -1,9 +1,10 @@
--- Ejecutá esto en el SQL Editor de tu proyecto Supabase
--- https://supabase.com/dashboard/project/aylfgwyoxvplfegshewv/sql
+-- Ejecutá esto en el SQL Editor de Supabase
+-- https://supabase.com/dashboard/project/aylfgwyoxvplfegshewv/sql/new
 
--- Tabla de pedidos (líneas de factura)
+-- Tabla de pedidos
 CREATE TABLE IF NOT EXISTS pedidos (
   id             BIGSERIAL PRIMARY KEY,
+  archivo        TEXT,           -- nombre del archivo Excel subido
   factura        TEXT,
   nro_factura    TEXT,
   cliente        TEXT,
@@ -19,35 +20,46 @@ CREATE TABLE IF NOT EXISTS pedidos (
   ord_compra     TEXT,
   ord_planilla   TEXT,
   ruta_cliente   TEXT,
+  separado       BOOLEAN DEFAULT FALSE,   -- checklist: ¿fue separado?
+  separado_por   TEXT,                    -- quién lo marcó
+  separado_at    TIMESTAMPTZ,             -- cuándo
   created_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Índices para búsqueda rápida por código de barras y nro factura
+-- Agregar columnas si la tabla ya existe
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS archivo      TEXT;
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS separado     BOOLEAN DEFAULT FALSE;
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS separado_por TEXT;
+ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS separado_at  TIMESTAMPTZ;
+
+-- Índices
 CREATE INDEX IF NOT EXISTS idx_pedidos_codigo_barras ON pedidos(codigo_barras);
 CREATE INDEX IF NOT EXISTS idx_pedidos_nro_factura   ON pedidos(nro_factura);
-CREATE INDEX IF NOT EXISTS idx_pedidos_cliente       ON pedidos(cliente);
+CREATE INDEX IF NOT EXISTS idx_pedidos_archivo       ON pedidos(archivo);
 
--- Tabla de escaneos (log de lo que se escanea en cada estación)
+-- RLS
+ALTER TABLE pedidos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Lectura publica pedidos"  ON pedidos;
+DROP POLICY IF EXISTS "Insertar pedidos"         ON pedidos;
+DROP POLICY IF EXISTS "Borrar pedidos"           ON pedidos;
+DROP POLICY IF EXISTS "Actualizar pedidos"       ON pedidos;
+
+CREATE POLICY "Lectura publica pedidos"  ON pedidos FOR SELECT USING (true);
+CREATE POLICY "Insertar pedidos"         ON pedidos FOR INSERT WITH CHECK (true);
+CREATE POLICY "Borrar pedidos"           ON pedidos FOR DELETE USING (true);
+CREATE POLICY "Actualizar pedidos"       ON pedidos FOR UPDATE USING (true);
+
+-- Tabla escaneos
 CREATE TABLE IF NOT EXISTS escaneos (
-  id               BIGSERIAL PRIMARY KEY,
-  codigo_barras    TEXT NOT NULL,
-  nro_factura      TEXT,
-  cliente          TEXT,
-  ruta             TEXT,
-  zona             TEXT,
-  estacion         INTEGER,
-  escaneado_at     TIMESTAMPTZ DEFAULT NOW()
+  id            BIGSERIAL PRIMARY KEY,
+  codigo_barras TEXT,
+  nro_factura   TEXT,
+  cliente       TEXT,
+  estacion      TEXT,
+  escaneado_at  TIMESTAMPTZ DEFAULT NOW()
 );
-
-CREATE INDEX IF NOT EXISTS idx_escaneos_codigo ON escaneos(codigo_barras);
-CREATE INDEX IF NOT EXISTS idx_escaneos_fecha  ON escaneos(escaneado_at);
-
--- Política RLS: acceso público (ajustá según necesites)
-ALTER TABLE pedidos  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE escaneos ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Lectura publica pedidos"  ON pedidos  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Lectura publica escaneos" ON escaneos;
+DROP POLICY IF EXISTS "Insertar escaneos"        ON escaneos;
 CREATE POLICY "Lectura publica escaneos" ON escaneos FOR SELECT USING (true);
 CREATE POLICY "Insertar escaneos"        ON escaneos FOR INSERT WITH CHECK (true);
-CREATE POLICY "Insertar pedidos"         ON pedidos  FOR INSERT WITH CHECK (true);
-CREATE POLICY "Borrar pedidos"           ON pedidos  FOR DELETE USING (true);
