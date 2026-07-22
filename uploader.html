@@ -267,8 +267,17 @@
       const col = mapping[field];
       if (!col) return;
       let val = r[col] ?? '';
-      if (field === 'cantidad') val = parseInt(val) || 0;
-      else val = String(val).trim();
+      if (field === 'cantidad') {
+        val = parseInt(val) || 0;
+      } else {
+        // Convertir notación científica a número completo (ej: 7.702E+12 → 7702001044450)
+        val = String(val).trim();
+        if (/^[\d.,]+e[+-]?\d+$/i.test(val)) {
+          val = String(Math.round(parseFloat(val.replace(',','.'))));
+        }
+        // Quitar comas de miles si las hay (7,702,001 → 7702001)
+        val = val.replace(/,/g, '');
+      }
       row[field] = val;
     });
     return row;

@@ -240,7 +240,11 @@ async function detectLoop() {
       try {
         const codes = await bd.detect(video);
         if (codes.length > 0) {
-          const code = codes[0].rawValue;
+          // Preferir EAN-13 (13 dígitos). Si hay varios, tomar el más largo
+          const sorted = codes.sort((a,b) => b.rawValue.length - a.rawValue.length);
+          const code = sorted[0].rawValue;
+          // Ignorar códigos cortos (menos de 10 caracteres)
+          if (code.length < 10) { setTimeout(loop, 150); return; }
           const now  = Date.now();
           if (code !== lastCode || (now - lastTs) > DEBOUNCE) {
             lastCode = code; lastTs = now;
@@ -288,6 +292,7 @@ function loadZxingAndStart(video) {
         const bmp = new ZXing.BinaryBitmap(bin);
         const res = reader.decode(bmp);
         const code = res.getText();
+        if (code.length < 10) { setTimeout(loop, 200); return; }
         const now  = Date.now();
         if (code !== lastCode || (now - lastTs) > DEBOUNCE) {
           lastCode = code; lastTs = now;
