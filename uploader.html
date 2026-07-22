@@ -96,15 +96,15 @@
   // Campos esperados en Supabase → etiqueta legible
   const FIELDS = {
     factura:       'Factura (ej: TD-N-1)',
-    nro_factura:   'Nº Factura / Ticket',
-    cliente:       'Cliente / Negocio',
+    nro_factura:   '⭐ Nº Factura (col. "Cliente" en Excel)',
+    cliente:       '⭐ Nombre cliente (col. "Negocio" en Excel)',
     ruta:          'Ruta',
     ubicacion:     'Ubicación',
     zona:          'Zona',
-    negocio:       'Negocio',
-    codigo_barras: '⭐ Código de barras',
-    cod_producto:  'Código producto',
-    producto:      '⭐ Producto (nombre)',
+    negocio:       'Negocio (duplicado)',
+    codigo_barras: '⭐ Código de barras (col. "codigo")',
+    cod_producto:  'Código producto (col. "Código")',
+    producto:      '⭐ Producto',
     cantidad:      '⭐ Cantidad',
     planilla:      'Planilla',
     ord_compra:    'Ord. Compra',
@@ -150,20 +150,20 @@
 
   // ── MAPEO AUTOMÁTICO ─────────────────────────────────────
   const AUTO_MAP = {
-    factura:       ['factura','tipo doc','td'],
-    nro_factura:   ['nrofactura','numero','número','ticket','factura n','n°','nro'],
-    cliente:       ['cliente','negocio','razon social','razón'],
+    factura:       ['factura'],
+    nro_factura:   ['cliente'],           // en tu Excel la col "Cliente" tiene el nro de factura
+    cliente:       ['negocio'],           // en tu Excel la col "Negocio" tiene el nombre real
     ruta:          ['ruta'],
     ubicacion:     ['ubicacion','ubicación'],
     zona:          ['zona'],
-    negocio:       ['negocio','cliente'],
-    codigo_barras: ['codigo','código','barras','ean','barcode','cod barras'],
-    cod_producto:  ['cod producto','codproducto','código producto','codigo producto'],
-    producto:      ['producto','descripcion','descripción','nombre'],
+    negocio:       ['negocio'],
+    codigo_barras: ['codigo','código','barras','ean','barcode'],
+    cod_producto:  ['código','codigo'],   // col "Código" (con tilde)
+    producto:      ['producto'],
     cantidad:      ['cantidad','qty','cant'],
     planilla:      ['planilla'],
-    ord_compra:    ['ord.compra','ord compra','orden compra','ordcompra'],
-    ord_planilla:  ['ord. planilla','ord planilla','ordplanilla'],
+    ord_compra:    ['ord.compra','ord compra','orden compra'],
+    ord_planilla:  ['ord. planilla','ord planilla'],
     ruta_cliente:  ['ruta cliente','rutacliente'],
   };
 

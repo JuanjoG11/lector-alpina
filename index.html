@@ -323,6 +323,10 @@ async function processScan(code) {
 
 // ── SUPABASE ──────────────────────────────────────────────
 async function buscarPedido(codigo) {
+  // codigo_barras es el código del producto (ej: 7702001044450)
+  // nro_factura es el número de factura (ej: 8100249471) — viene de col "Cliente" del Excel
+  // cliente es el nombre (ej: SUPERMISCELANEA) — viene de col "Negocio" del Excel
+
   let rows = await supaGet(
     `pedidos?codigo_barras=eq.${enc(codigo)}&select=*&limit=1`
   );
@@ -333,9 +337,10 @@ async function buscarPedido(codigo) {
   }
   if (!rows || !rows.length) return null;
 
+  // Traer TODOS los productos de esa factura
   const nro  = rows[0].nro_factura;
   const todo = await supaGet(`pedidos?nro_factura=eq.${enc(nro)}&select=*`);
-  return buildPedido(todo);
+  return buildPedido(todo.length ? todo : rows);
 }
 
 function buildPedido(rows) {
@@ -344,9 +349,11 @@ function buildPedido(rows) {
   return {
     nroFactura: b.nro_factura,
     factura:    b.factura,
-    cliente:    b.cliente || b.negocio || b.nro_factura,
-    ruta:       b.ruta,
+    cliente:    b.cliente,           // nombre real (col Negocio del Excel)
+    ruta:       b.ruta_cliente || b.ruta,
     zona:       b.zona,
+    planilla:   b.planilla,
+    ordCompra:  b.ord_compra,
     productos:  rows.map(r => ({
       codProducto: r.cod_producto,
       nombre:      r.producto,
