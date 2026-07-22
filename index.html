@@ -224,18 +224,21 @@ async function detectLoop(){
       try{
         const codes=await bd.detect(v);
         if(codes.length){
-          // Tomar el más largo, ignorar <10 chars
-          const best=codes.sort((a,b)=>b.rawValue.length-a.rawValue.length)[0];
-          const code=best.rawValue;
-          if(code.length>=10){
+          // Solo aceptar EAN-13 (13 dígitos) o códigos largos ≥10 chars
+          // Filtrar el más largo primero
+          const valid=codes
+            .map(c=>c.rawValue)
+            .filter(c=>/^\d{10,}$/.test(c))  // solo numérico de 10+ dígitos
+            .sort((a,b)=>b.length-a.length);
+          if(!valid.length){setTimeout(loop,150);return;}
+          const code=valid[0];
             const now=Date.now();
             if(code!==lastCode||(now-lastTs)>DEB){
               lastCode=code;lastTs=now;
               flash();vibrate([60]);processScan(code);
             }
           }
-        }
-      }catch{}
+        }catch{}
       setTimeout(loop,150);
     };loop();
   } else {
@@ -258,7 +261,7 @@ async function detectLoop(){
           const lum=new ZXing.HTMLCanvasElementLuminanceSource(canvas);
           const res=new ZXing.MultiFormatReader().decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(lum)));
           const code=res.getText();
-          if(code.length>=10){
+          if(!/^\d{10,}$/.test(code)){setTimeout(loop,200);return;}
             const now=Date.now();
             if(code!==lastCode||(now-lastTs)>DEB){lastCode=code;lastTs=now;flash();vibrate([60]);processScan(code);}
           }
