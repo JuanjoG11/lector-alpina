@@ -1,0 +1,28 @@
+[
+  {
+    "factura":    "TD-N-1",
+    "nroFactura": "8100249471",
+    "cliente":    "SUPERMISCELANEA",
+    "ruta":       "AM01",
+    "zona":       "M9450",
+    "codigoBarras": "7702001044450",
+    "codProducto":  "4445",
+    "producto":   "ALPIN FRE CAJ 200ML",
+    "cantidad":   3,
+    "planilla":   "22225",
+    "ordCompra":  "1129221"
+  },
+  {
+    "factura":    "TD-N-1",
+    "nroFactura": "8100249471",
+    "cliente":    "SUPERMISCELANEA",
+    "ruta":       "AM01",
+    "zona":       "M9450",
+    "codigoBarras": "7702001044542",
+    "codProducto":  "4454",
+    "producto":   "AVENA CAN VASO 250G",
+    "cantidad":   6,
+    "planilla":   "22225",
+    "ordCompra":  "1129221"
+  }
+]
